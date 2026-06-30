@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Save The Brain - Neuro Rescue Mission</title>
+
+<style>
+:root {
+    --critical: #ef4444;
+    --unstable: #f97316;
+    --stable: #eab308;
+    --recovering: #3b82f6;
+    --recovered: #10b981;
+    --monitor-green: #22c55e;
+    --monitor-cyan: #06b6d4;
+    --dark-bg: #030712;
+    --gm-orange: #f59e0b;
+}
+
+body {
+    font-family: 'Courier New', Courier, monospace;
+    background-color: #000000;
+    color: var(--monitor-cyan);
+    text-align: center;
+    padding: 15px;
+    margin: 0;
+    overflow-x: hidden;
+    user-select: none;
+}
+
+/* HOSPITAL CRT MONITOR SCREEN EFFECT */
+.monitor-chassis {
+    max-width: 950px;
+    margin: 20px auto;
+    background: #111827;
+    padding: 15px;
+    border-radius: 24px;
+    border: 8px solid #374151;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), inset 0 2px 4px rgba(255,255,255,0.2);
+}
+
+.card {
+    background: radial-gradient(circle at center, #06152d 0%, #010409 100%);
+    padding: 30px 25px;
+    border-radius: 12px;
+    border: 3px solid #1e293b;
+    position: relative;
+    box-shadow: inset 0 0 40px rgba(6, 182, 212, 0.2);
+    overflow: hidden;
+}
+
+/* Glass Scanlines Layer */
+.card::after {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(6,182,212,0.04), rgba(34,197,94,0.02), rgba(6,182,212,0.04));
+    z-index: 10;
+    background-size: 100% 5px, 6px 100%;
+    pointer-events: none;
+}
+
+/* MONITOR HEADER METRICS */
+.monitor-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #4b5563;
+    font-weight: bold;
+    border-bottom: 2px solid rgba(6, 182, 212, 0.2);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.monitor-layout {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.main-display {
+    flex: 3;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(6, 182, 212, 0.15);
+}
+
+/* VITAL SIGN SIDE PANEL */
+.vital-side-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.vital-box {
+    background: #020617;
+    border: 2px solid #1e293b;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: right;
+}
+
+.vital-box.green { border-color: var(--monitor-green); color: var(--monitor-green); }
+.vital-box.cyan { border-color: var(--monitor-cyan); color: var(--monitor-cyan); }
+.vital-box.red { border-color: var(--critical); color: var(--critical); }
+
+.vital-label { font-size: 11px; font-weight: bold; text-align: left; }
+.vital-value { font-size: 36px; font-weight: bold; font-family: monospace; line-height: 1; }
+.vital-unit { font-size: 10px; }
+
+h1 {
+    font-size: 34px;
+    letter-spacing: 2px;
+    margin: 5px 0;
+    color: #ffffff;
+    text-shadow: 0 0 12px rgba(6, 182, 212, 0.6);
+}
+
+/* MEDICAL ECG WAVE ANIMATION */
+.ecg-container {
+    width: 100%;
+    height: 50px;
+    background: #01040a;
+    border: 1px solid rgba(6, 182, 212, 0.2);
+    margin: 15px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.ecg-grid-bg {
+    position: absolute;
+    width: 100%; height: 100%;
+    background-size: 10px 10px;
+    background-image: linear-gradient(to right, rgba(6,182,212,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(6,182,212,0.05) 1px, transparent 1px);
+}
+
+.ecg-svg {
+    position: absolute;
+    width: 100%; height: 100%;
+    top: 0; left: 0;
+}
+
+.ecg-path {
+    stroke: var(--monitor-cyan);
+    stroke-width: 3;
+    fill: none;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: drawEcg 2.5s linear infinite;
+}
+
+@keyframes drawEcg {
+    to { stroke-dashoffset: 0; }
+}
+
+.region-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.region-item {
+    background: rgba(15, 23, 42, 0.8);
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px dashed var(--monitor-cyan);
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* LED BUTTONS STYLE */
+.btn-pulse {
+    padding: 12px 30px;
+    font-size: 15px;
+    cursor: pointer;
+    background: #020617;
+    color: #ffffff;
+    border: 2px solid var(--monitor-cyan);
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+    font-weight: bold;
+    font-family: inherit;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.btn-pulse:hover {
+    background: var(--monitor-cyan);
+    color: #000000;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.8);
+}
+
+#gameScreen, #endScreen, #failScreen { display: none; }
+
+#percentage {
+    font-size: 65px;
+    font-weight: bold;
+    margin: 5px 0;
+}
+
+.progress {
+    width: 100%; height: 18px;
+    background: #020617;
+    border: 1px solid var(--monitor-cyan);
+    margin-bottom: 20px;
+}
+
+.bar {
+    height: 100%; width: 20%;
+    background-color: var(--critical);
+    transition: width 0.4s ease, background-color 0.4s ease;
+}
+
+input {
+    padding: 10px; width: 200px;
+    font-size: 16px; font-family: inherit;
+    border: 2px solid var(--monitor-cyan);
+    background: #000000; color: #ffffff;
+    text-align: center; outline: none;
+}
+
+input.team-input {
+    border-color: var(--monitor-cyan);
+    width: 280px;
+    font-size: 18px;
+    letter-spacing: 2px;
+    margin-bottom: 15px;
+}
+
+button.action-btn {
+    padding: 10px 18px; font-size: 15px; font-family: inherit;
+    cursor: pointer; margin: 3px;
+    background: #1e293b; color: white; border: 1px solid #475569;
+}
+
+button.action-btn:hover { background: #334155; }
+
+.history {
+    margin-top: 20px; background: #000000; padding: 12px;
+    border: 1px solid rgba(6, 182, 212, 0.3); text-align: left;
+}
+
+#timer { font-size: 40px; font-weight: bold; color: #22d3ee; margin: 5px 0; }
+#fwCanvas { position: absolute; top:0; left:0; width:100%; height:100%; z-index:1; pointer-events:none; display:none; }
+
+/* STYLE FOR BIG PADLOCK CLUE */
+.padlock-clue {
+    background: rgba(234, 179, 8, 0.1);
+    border: 3px solid var(--stable);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 20px auto;
+    max-width: 400px;
+    box-shadow: 0 0 15px rgba(234, 179, 8, 0.3);
+}
+
+/* POPUP OVERLAY MODAL STYLE */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 100;
+}
+
+.gm-modal-box {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 520px;
+    background: radial-gradient(circle at center, #071933 0%, #020710 100%);
+    border: 4px solid var(--gm-orange);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.6);
+    color: #ffffff;
+    text-align: center;
+}
+
+.gm-modal-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--gm-orange);
+    letter-spacing: 2px;
+    margin-bottom: 5px;
+}
+
+.gm-modal-subtitle {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-bottom: 20px;
+}
+
+.gm-btn-container {
+    display: none; 
+    margin-top: 15px;
+}
+
+.gm-btn {
+    padding: 10px 15px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: bold;
+    background: transparent;
+    cursor: pointer;
+    margin: 5px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+}
+
+.gm-btn-red { border: 2px solid var(--critical); color: var(--critical); }
+.gm-btn-red:hover { background: var(--critical); color: black; }
+
+.gm-btn-blue { border: 2px solid var(--monitor-cyan); color: var(--monitor-cyan); }
+.gm-btn-blue:hover { background: var(--monitor-cyan); color: black; }
+
+.gm-btn-gray { border: 2px solid #64748b; color: #64748b; }
+.gm-btn-gray:hover { background: #64748b; color: black; }
+
+/* 2-SECOND TEMPORARY SUCCESS POPUP ALERT */
+.toast-popup {
+    display: none;
+    position: fixed;
+    top: 25%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #020617;
+    border: 3px solid var(--monitor-green);
+    border-radius: 8px;
+    padding: 20px 40px;
+    z-index: 99;
+    box-shadow: 0 0 25px rgba(34, 197, 150, 0.5);
+    animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+    0% { transform: translate(-50%, -60%); opacity: 0; }
+    100% { transform: translate(-50%, -50%); opacity: 1; }
+}
+
+.toast-title {
+    color: var(--monitor-green);
+    font-weight: bold;
+    font-size: 18px;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+.toast-body {
+    color: #ffffff;
+    font-size: 14px;
+}
+</style>
+</head>
+
+<body onclick="initAudioOnInteraction()">
+
+<canvas id="fwCanvas"></canvas>
+
+<div id="toastAlert" class="toast-popup">
+    <div class="toast-title">✓ RECOVERY CODE ACCEPTED</div>
+    <div id="toastBody" class="toast-body">Frontal Lobe Restored</div>
+</div>
+
+<div id="gmModal" class="modal-overlay">
+    <div class="gm-modal-box">
+        <div class="gm-modal-title">🛠️ GAME MASTER HUB</div>
+        <div class="gm-modal-subtitle">Authorized Operations Only</div>
+        
+        <div id="gmAuthZone" style="margin-bottom: 15px;">
+            <input type="password" id="gmPasswordField" placeholder="ENTER AUTH PASSWORD" style="border-color: var(--gm-orange); width: 220px; font-size: 14px; background: #000000; color: #ffffff;"><br>
+            <button class="action-btn" style="background: var(--gm-orange); color: black; font-weight: bold; margin-top: 10px; border: none; font-size: 12px; padding: 6px 15px;" onclick="validateGmPassword()">VERIFY KEY</button>
+        </div>
+
+        <div id="gmActionContainer" class="gm-btn-container">
+            <button class="gm-btn gm-btn-red" onclick="triggerGameMasterRescue()">RESET GAME STATE</button>
+            <button class="gm-btn gm-btn-blue" onclick="triggerFullNewTeamReset()">START NEW TEAM</button>
+        </div>
+        
+        <div style="margin-top: 15px;">
+            <button class="gm-btn gm-btn-gray" style="padding: 5px 15px;" onclick="closeGmHub()">CLOSE INTERFACE</button>
+        </div>
+    </div>
+</div>
+
+<div class="monitor-chassis">
+    <div class="card">
+        
+        <div class="monitor-header">
+            <div>TEAM: <span id="headerTeamName" style="color: #ffffff;">AWAITING LINK...</span></div>
+            <div>STATION: NEURO-ICU POD-04</div>
+            <div>SYSTEM: SYSTEM ONLINE</div>
+        </div>
+
+        <div class="monitor-layout">
+            
+            <div class="main-display">
+                
+                <div id="startScreen">
+                    <h1>🧠 SAVE THE BRAIN</h1>
+                    <h3 style="color: #64748b; margin: 0; letter-spacing: 3px;">NEUROLOGICAL INTERFACE v2.6</h3>
+                    
+                    <div class="ecg-container">
+                        <div class="ecg-grid-bg"></div>
+                        <svg class="ecg-svg" viewBox="0 0 600 50">
+                            <path class="ecg-path" d="M0,25 L200,25 L210,10 L220,40 L230,-5 L245,55 L255,25 L600,25" />
+                        </svg>
+                    </div>
+                    
+                    <div style="font-size: 14px; margin: 15px 0; font-weight: bold; color: #64748b;">
+                        SYSTEM STATUS: <span style="color: var(--stable);">⚠️ WAITING FOR GAME MASTER...</span>
+                    </div>
+                    
+                    <div style="margin: 20px 0;">
+                        <label style="display: block; font-size: 13px; color: var(--monitor-cyan); margin-bottom: 8px; font-weight: bold;">ENTER TEAM NAME:</label>
+                        <input type="text" id="teamNameInput" class="team-input" placeholder="">
+                    </div>
+
+                    <button class="btn-pulse" style="border-color: var(--monitor-green); box-shadow: 0 0 10px rgba(34,197,94,0.3);" onclick="processStartCommand()">[ START MISSION ]</button>
+                </div>
+
+                <div id="gameScreen">
+                    <div id="centerTeamDisplay" style="font-size: 24px; font-weight: bold; color: #ffffff; letter-spacing: 3px; margin-bottom: 10px; text-shadow: 0 0 8px rgba(255,255,255,0.5);">TEAM: -</div>
+                    
+                    <h3 style="color: #ffffff; margin: 0; font-size: 14px; letter-spacing: 1px;">VITAL SURVIVAL SYNC</h3>
+                    <div id="timer">12:00</div>
+                    
+                    <div id="percentage" style="color: var(--critical);">20%</div>
+                    <div class="progress"><div class="bar" id="bar"></div></div>
+                    
+                    <h2 id="status" style="color: var(--critical); font-weight: bold; margin: 5px 0;">🔴 CRITICAL</h2>
+                    <p id="objective" style="color: #64748b; font-size: 12px;">SYSTEM SYNC: 0/4 LOBES REDEEMED</p>
+                    
+                    <div style="margin: 15px 0;">
+                        <input type="text" id="codeInput" placeholder="INPUT MATRIX">
+                        <button class="action-btn" id="submitBtn" style="background: rgba(6,182,212,0.2); border-color: var(--monitor-cyan);" onclick="checkCode()">SUBMIT</button>
+                    </div>
+                    
+                    <p id="message" style="font-weight: bold; height: 15px; font-size: 13px; margin: 5px 0;"></p>
+
+                    <div class="history">
+                        <div style="font-size: 11px; color: var(--monitor-cyan); font-weight: bold; margin-bottom: 5px;">SYS MATRIX LOGS:</div>
+                        <div id="historyList" style="color: #64748b; font-size: 12px; line-height: 1.5;">Awaiting active link sequences...</div>
+                    </div>
+                </div>
+
+                <div id="endScreen">
+                    <h1 style="color: var(--recovered); font-size: 42px; letter-spacing: 3px; margin: 5px 0;">🟢 MISSION COMPLETE</h1>
+                    <h3 style="color: #eab308; margin: 5px 0; font-weight: bold; letter-spacing: 1px;">RECOVERY BOX ACCESSIBLE</h3>
+                    
+                    <div class="ecg-container">
+                        <div class="ecg-grid-bg"></div>
+                        <svg class="ecg-svg" viewBox="0 0 600 50">
+                            <path class="ecg-path" style="stroke: var(--monitor-green);" d="M0,25 L100,25 L110,15 L120,35 L127,5 L135,45 L142,25 L300,25 L310,15 L320,35 L327,5 L335,45 L342,25 L600,25" />
+                        </svg>
+                    </div>
+                    
+                    <h1 style="font-size: 65px; color: var(--recovered); margin: 5px 0;">100%</h1>
+                    
+                    <p style="color: #ffffff; font-size: 14px; max-width: 600px; margin: 15px auto; line-height: 1.6; background: rgba(16, 185, 129, 0.12); padding: 15px; border: 2px dashed var(--recovered);">
+                        <strong>Proceed to unlock the emergency box. The clinical interface matrix recovery sequence has concluded successfully.</strong>
+                    </p>
+
+                    <div class="padlock-clue">
+                        <div style="font-size: 16px; color: var(--stable); font-weight: bold; letter-spacing: 1px; margin-bottom: 5px;">⚠️ SECURITY DECRYPTION CLUE</div>
+                        <div style="font-size: 22px; color: #ffffff; font-weight: 900; margin: 3px 0;">Master Digit:</div>
+                        <div style="font-size: 72px; color: var(--stable); font-weight: 900; line-height: 1; text-shadow: 0 0 20px rgba(234, 179, 8, 0.8);">2</div>
+                    </div>
+                </div>
+
+                <div id="failScreen">
+                    <h1 style="color: var(--critical); font-size: 42px; letter-spacing: 3px; margin: 5px 0;">🚨 MISSION FAILED</h1>
+                    <h3 style="color: #ef4444; margin: 5px 0; letter-spacing: 1px;">PATIENT CONDITION CRITICAL</h3>
+                    
+                    <div class="ecg-container"><div style="width: 100%; height: 3px; background: var(--critical); position: absolute; top: 24px; box-shadow: 0 0 8px var(--critical);"></div></div>
+                    
+                    <p style="color: #ffffff; font-size: 15px; margin: 25px auto; max-width: 580px; font-weight: bold; background: rgba(239, 68, 68, 0.15); padding: 20px; border: 2px solid var(--critical); line-height: 1.6;">
+                        Please contact the Game Master. Structural threshold rupture finalized. System lockout engaged.
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="vital-side-panel">
+                <div class="vital-box green">
+                    <div class="vital-label">HR</div>
+                    <div class="vital-value" id="vitalHR">82</div>
+                    <div class="vital-unit">bpm</div>
+                </div>
+                <div class="vital-box cyan">
+                    <div class="vital-label">SpO2</div>
+                    <div class="vital-value">98</div>
+                    <div class="vital-unit">%</div>
+                </div>
+                <div class="vital-box red">
+                    <div class="vital-label">RESP</div>
+                    <div class="vital-value" id="vitalRESP">16</div>
+                    <div class="vital-unit">/min</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+// STATE INITIALIZATION
+let progress = parseInt(localStorage.getItem("neuro_progress")) || 20;
+let usedCodes = JSON.parse(localStorage.getItem("neuro_used_codes")) || [];
+let timeLeft = localStorage.getItem("neuro_time_left") !== null ? parseInt(localStorage.getItem("neuro_time_left")) : 720;
+let teamName = localStorage.getItem("neuro_team_name") || "";
+let isGameActive = localStorage.getItem("neuro_game_active") === "true";
+
+let timer;
+let vitalInterval;
+let hasPlayedScreenIntro = false;
+let flatlineOsc = null; 
+
+const codes = {
+"1206":"Frontal Lobe",
+"2037":"Parietal Lobe",
+"0348":"Temporal Lobe",
+"4509":"Occipital Lobe"
+};
+
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let ambientOsc, ambientGain;
+let happyMusicInterval = null;
+let currentMusicNoteIndex = 0;
+
+const happyMelody = [
+    261.63, 261.63, 392.00, 392.00, 440.00, 440.00, 392.00, 0,
+    349.23, 349.23, 329.63, 329.63, 293.66, 293.66, 261.63, 0,
+    392.00, 392.00, 349.23, 349.23, 329.63, 329.63, 293.66, 0,
+    392.00, 392.00, 349.23, 349.23, 329.63, 329.63, 293.66, 0
+];
+
+window.addEventListener('DOMContentLoaded', () => {
+    if (isGameActive) {
+        document.getElementById("startScreen").style.display = "none";
+        document.getElementById("headerTeamName").innerText = teamName.toUpperCase();
+        document.getElementById("centerTeamDisplay").innerText = "TEAM: " + teamName.toUpperCase();
+        
+        if (progress >= 100) {
+            showEndGameUI();
+        } else if (timeLeft <= 0) {
+            showFailGameUI();
+        } else {
+            document.getElementById("gameScreen").style.display = "block";
+            startBackgroundBeep();
+            startAmbientMusic();
+            startVitalFluctuation();
+            resumeTimer();
+            updateHistory();
+            updateUI();
+        }
+    } else {
+        document.getElementById("startScreen").style.display = "block";
+        startHappyBackgroundMusic();
+    }
+});
+
+// SECRET HOTKEY LINK
+window.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        openGmHub();
+    }
+});
+
+function startHappyBackgroundMusic() {
+    if (happyMusicInterval) return;
+    let tempo = 180;
+    happyMusicInterval = setInterval(() => {
+        let freq = happyMelody[currentMusicNoteIndex];
+        if (freq > 0) {
+            let now = audioCtx.currentTime;
+            let osc = audioCtx.createOscillator();
+            let gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.5, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + (tempo / 1000) - 0.02);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(now); osc.stop(now + (tempo / 1000));
+        }
+        currentMusicNoteIndex = (currentMusicNoteIndex + 1) % happyMelody.length;
+    }, tempo);
+}
+
+function stopHappyBackgroundMusic() {
+    if (happyMusicInterval) { clearInterval(happyMusicInterval); happyMusicInterval = null; currentMusicNoteIndex = 0; }
+}
+
+function initAudioOnInteraction() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    if (!hasPlayedScreenIntro && document.getElementById("startScreen").style.display !== "none") {
+        hasPlayedScreenIntro = true;
+        startHappyBackgroundMusic();
+    }
+}
+
+function startAmbientMusic() {
+    try {
+        let now = audioCtx.currentTime;
+        ambientOsc = audioCtx.createOscillator();
+        ambientGain = audioCtx.createGain();
+        ambientOsc.type = 'sine';
+        ambientOsc.frequency.setValueAtTime(80, now); 
+        ambientGain.gain.setValueAtTime(0.005, now); 
+        ambientOsc.connect(ambientGain); ambientGain.connect(audioCtx.destination);
+        ambientOsc.start(now);
+    } catch(e) {}
+}
+
+function stopAmbientMusic() {
+    try { if(ambientOsc) { ambientOsc.stop(); ambientOsc.disconnect(); } } catch(e){}
+}
+
+function startFlatlineSound() {
+    try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        let now = audioCtx.currentTime;
+        flatlineOsc = audioCtx.createOscillator();
+        let flatlineGain = audioCtx.createGain();
+        flatlineOsc.type = 'sine';
+        flatlineOsc.frequency.setValueAtTime(460, now); 
+        flatlineGain.gain.setValueAtTime(1.3, now); 
+        flatlineOsc.connect(flatlineGain);
+        flatlineGain.connect(audioCtx.destination);
+        flatlineOsc.start(now);
+    } catch(e) {}
+}
+
+function stopFlatlineSound() {
+    try { if(flatlineOsc) { flatlineOsc.stop(); flatlineOsc.disconnect(); flatlineOsc = null; } } catch(e){}
+}
+
+function playHappySound(style) {
+    try {
+        let now = audioCtx.currentTime;
+        if (style === 'mario-win') {
+            let winNotes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50, 0, 783.99, 0, 1046.50];
+            let winTempo = 0.11;
+            winNotes.forEach((freq, index) => {
+                let osc = audioCtx.createOscillator();
+                let gain = audioCtx.createGain();
+                osc.type = 'square';
+                if (freq > 0) {
+                    osc.frequency.setValueAtTime(freq, now + (index * winTempo));
+                    gain.gain.setValueAtTime(1.4, now + (index * winTempo)); 
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + (index * winTempo) + 0.25);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(now + (index * winTempo)); osc.stop(now + (index * winTempo) + 0.3);
+                }
+            });
+        }
+    } catch(e) {}
+}
+
+function playBeepSound(type) {
+    try {
+        let now = audioCtx.currentTime;
+        if (type === 'beep') {
+            let osc1 = audioCtx.createOscillator(); let gain1 = audioCtx.createGain();
+            osc1.type = 'sine'; osc1.frequency.setValueAtTime(58, now); gain1.gain.setValueAtTime(1.2, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+            osc1.connect(gain1); gain1.connect(audioCtx.destination); osc1.start(now); osc1.stop(now + 0.15);
+
+            let osc2 = audioCtx.createOscillator(); let gain2 = audioCtx.createGain();
+            osc2.type = 'sine'; osc2.frequency.setValueAtTime(65, now + 0.14); gain2.gain.setValueAtTime(1.0, now + 0.14);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.14 + 0.15);
+            osc2.connect(gain2); gain2.connect(audioCtx.destination); osc2.start(now + 0.14); osc2.stop(now + 0.14 + 0.15);
+        } else if (type === 'success') {
+            let frequencies = [523.25, 659.25, 783.99, 1046.50];
+            frequencies.forEach((freq, index) => {
+                let osc = audioCtx.createOscillator(); let gain = audioCtx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(freq, now + (index * 0.06)); gain.gain.setValueAtTime(1.3, now + (index * 0.06));
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + (index * 0.06) + 0.5);
+                osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now + (index * 0.06)); osc.stop(now + (index * 0.06) + 0.5);
+            });
+        } else if (type === 'error') {
+            let osc = audioCtx.createOscillator(); let osc2 = audioCtx.createOscillator(); let gain = audioCtx.createGain(); let filter = audioCtx.createBiquadFilter();
+            osc.type = 'sawtooth'; osc2.type = 'sawtooth'; osc.frequency.setValueAtTime(110, now); osc2.frequency.setValueAtTime(115, now);
+            filter.type = 'lowpass'; filter.frequency.setValueAtTime(550, now); gain.gain.setValueAtTime(1.5, now); gain.gain.linearRampToValueAtTime(0.001, now + 0.4);
+            osc.connect(filter); osc2.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(now); osc2.start(now); osc.stop(now + 0.4); osc2.stop(now + 0.4);
+        }
+    } catch(e) {}
+}
+
+let backgroundBeepInterval;
+function startBackgroundBeep() {
+    let intervalTime = 1300;
+    if (progress < 40) intervalTime = 550;
+    else if (progress < 60) intervalTime = 800;
+    else if (progress < 80) intervalTime = 1050;
+    else if (progress < 100) intervalTime = 1350;
+
+    clearInterval(backgroundBeepInterval);
+    backgroundBeepInterval = setInterval(() => {
+        if (progress < 100 && timeLeft > 0) { playBeepSound('beep'); }
+    }, intervalTime);
+}
+
+function startVitalFluctuation() {
+    clearInterval(vitalInterval);
+    vitalInterval = setInterval(() => {
+        if(progress < 100 && timeLeft > 0) {
+            let baseHR = progress < 40 ? 125 : (progress < 70 ? 100 : 78);
+            document.getElementById("vitalHR").innerHTML = Math.floor(baseHR + (Math.random() * 8 - 4));
+            let baseRESP = progress < 40 ? 28 : (progress < 70 ? 22 : 15);
+            document.getElementById("vitalRESP").innerHTML = Math.floor(baseRESP + (Math.random() * 4 - 2));
+        }
+    }, 2000);
+}
+
+function processStartCommand() {
+    let inputName = document.getElementById("teamNameInput").value.trim();
+    if (inputName === "") {
+        alert("CRITICAL REQUIRED: Please input a valid Team Name to initialize link interface.");
+        return;
+    }
+    teamName = inputName;
+    isGameActive = true;
+    progress = 20;
+    usedCodes = [];
+    timeLeft = 720;
+    
+    localStorage.setItem("neuro_team_name", teamName);
+    localStorage.setItem("neuro_game_active", "true");
+    localStorage.setItem("neuro_progress", progress);
+    localStorage.setItem("neuro_used_codes", JSON.stringify(usedCodes));
+    localStorage.setItem("neuro_time_left", timeLeft);
+
+    document.getElementById("headerTeamName").innerText = teamName.toUpperCase();
+    document.getElementById("centerTeamDisplay").innerText = "TEAM: " + teamName.toUpperCase();
+    
+    stopHappyBackgroundMusic();
+    stopFlatlineSound(); 
+    
+    document.getElementById("startScreen").style.display = "none";
+    document.getElementById("gameScreen").style.display = "block";
+    document.getElementById("failScreen").style.display = "none";
+    
+    startBackgroundBeep();
+    startAmbientMusic();
+    startVitalFluctuation();
+    resumeTimer();
+    updateUI();
+    updateHistory();
+}
+
+function resumeTimer(){
+    clearInterval(timer);
+    timer = setInterval(()=>{
+        timeLeft--;
+        localStorage.setItem("neuro_time_left", timeLeft);
+        
+        let minutes = Math.floor(timeLeft/60);
+        let seconds = timeLeft%60;
+        document.getElementById("timer").innerHTML = String(minutes).padStart(2,"0") + ":" + String(seconds).padStart(2,"0");
+        
+        if(timeLeft <= 120) document.getElementById("timer").style.color="var(--critical)";
+        if(timeLeft <= 0){ clearInterval(timer); missionFailed(); }
+    }, 1000);
+}
+
+function checkCode(){
+    if (progress >= 100 || timeLeft <= 0) return; 
+    
+    let code = document.getElementById("codeInput").value.trim();
+    
+    if (usedCodes.includes(code)) {
+        playBeepSound('error');
+        document.getElementById("message").style.color = "var(--critical)";
+        document.getElementById("message").innerHTML = ">> CODE DUPLICATION DETECTED: ACCESS DENIED";
+        document.getElementById("codeInput").value="";
+        return;
+    }
+
+    if(codes[code]){
+        usedCodes.push(code);
+        progress += 20;
+        if(progress > 100) progress = 100;
+        
+        localStorage.setItem("neuro_progress", progress);
+        localStorage.setItem("neuro_used_codes", JSON.stringify(usedCodes));
+        
+        triggerTemporaryToast(codes[code]);
+        
+        updateHistory();
+        updateUI();
+        
+        if (progress < 100) playBeepSound('success');
+        startBackgroundBeep();
+        
+        document.getElementById("message").innerHTML = "";
+    } else {
+        playBeepSound('error');
+        document.getElementById("message").style.color = "var(--critical)";
+        document.getElementById("message").innerHTML = ">> SIGNAL INVALID: CHECK MATRIX CODE";
+    }
+    document.getElementById("codeInput").value="";
+}
+
+function triggerTemporaryToast(lobeRestored) {
+    document.getElementById("toastBody").innerText = lobeRestored + " Restored";
+    const toast = document.getElementById("toastAlert");
+    toast.style.display = "block";
+    setTimeout(() => {
+        toast.style.display = "none";
+    }, 2000);
+}
+
+function updateHistory(){
+    let html="";
+    if (usedCodes.length === 0) {
+        document.getElementById("historyList").innerHTML = "Awaiting active link sequences...";
+    } else {
+        usedCodes.forEach(code=>{ html += ">> SYSTEM OVERRIDE: " + codes[code].toUpperCase() + " SYNCED [OK] <br>"; });
+        document.getElementById("historyList").innerHTML = html;
+    }
+    document.getElementById("objective").innerHTML = "SYSTEM SYNC: " + usedCodes.length + "/4 LOBES REDEEMED";
+}
+
+function updateUI(){
+    document.getElementById("percentage").innerHTML = progress + "%";
+    document.getElementById("bar").style.width = progress + "%";
+
+    const status = document.getElementById("status");
+    const percText = document.getElementById("percentage");
+    const progressBar = document.getElementById("bar");
+
+    if(progress < 40){
+        status.innerHTML = "🔴 CRITICAL";
+        status.style.color = percText.style.color = progressBar.style.backgroundColor = "var(--critical)";
+    } else if(progress < 60){
+        status.innerHTML = "🟠 UNSTABLE";
+        status.style.color = percText.style.color = progressBar.style.backgroundColor = "var(--unstable)";
+    } else if(progress < 80){
+        status.innerHTML = "🟡 STABLE";
+        status.style.color = percText.style.color = progressBar.style.backgroundColor = "var(--stable)";
+    } else if(progress < 100){
+        status.innerHTML = "🔵 RECOVERING";
+        status.style.color = percText.style.color = progressBar.style.backgroundColor = "var(--recovering)";
+    } else {
+        showEndGameUI();
+    }
+}
+
+function showEndGameUI() {
+    clearInterval(timer); clearInterval(backgroundBeepInterval); clearInterval(vitalInterval); stopAmbientMusic();
+    document.getElementById("vitalHR").innerHTML = "72";
+    document.getElementById("vitalRESP").innerHTML = "14";
+    
+    document.getElementById("gameScreen").style.display="none";
+    document.getElementById("failScreen").style.display="none";
+    document.getElementById("endScreen").style.display="block";
+    
+    setTimeout(() => { playHappySound('mario-win'); }, 400); 
+    setTimeout(() => { startHappyBackgroundMusic(); }, 2000);
+    startFireworks();
+}
+
+function missionFailed(){
+    showFailGameUI();
+}
+
+function showFailGameUI() {
+    clearInterval(timer); clearInterval(backgroundBeepInterval); clearInterval(vitalInterval);
+    stopAmbientMusic(); stopHappyBackgroundMusic();
+    
+    document.getElementById("vitalHR").innerHTML = "0";
+    document.getElementById("vitalRESP").innerHTML = "0";
+    
+    startFlatlineSound();
+
+    document.getElementById("gameScreen").style.display="none";
+    document.getElementById("endScreen").style.display="none";
+    document.getElementById("failScreen").style.display="block";
+}
+
+function openGmHub() {
+    document.getElementById("gmModal").style.display = "block";
+    document.getElementById("gmPasswordField").value = "";
+    document.getElementById("gmAuthZone").style.display = "block";
+    document.getElementById("gmActionContainer").style.display = "none";
+}
+
+function closeGmHub() {
+    document.getElementById("gmModal").style.display = "none";
+}
+
+function validateGmPassword() {
+    let pass = document.getElementById("gmPasswordField").value.trim();
+    if (pass === "PhysioKai_") {
+        document.getElementById("gmAuthZone").style.display = "none";
+        document.getElementById("gmActionContainer").style.display = "block";
+    } else {
+        alert("ACCESS AUTHORIZATION REJECTED: CRITICAL WRONG PASSWORD");
+        document.getElementById("gmPasswordField").value = "";
+    }
+}
+
+function triggerGameMasterRescue() {
+    stopFlatlineSound();
+    timeLeft = 300; 
+    localStorage.setItem("neuro_time_left", timeLeft);
+    
+    document.getElementById("timer").style.color = "#22d3ee";
+    
+    closeGmHub();
+    document.getElementById("failScreen").style.display = "none";
+    document.getElementById("endScreen").style.display = "none";
+    document.getElementById("gameScreen").style.display = "block";
+    
+    startBackgroundBeep();
+    startAmbientMusic();
+    startVitalFluctuation();
+    resumeTimer();
+    updateUI();
+}
+
+function triggerFullNewTeamReset() {
+    clearInterval(timer); clearInterval(backgroundBeepInterval); clearInterval(vitalInterval); 
+    stopAmbientMusic(); stopHappyBackgroundMusic(); stopFlatlineSound();
+    
+    localStorage.clear(); 
+    
+    progress = 20; 
+    usedCodes = []; 
+    timeLeft = 720; 
+    teamName = "";
+    isGameActive = false;
+    
+    document.getElementById("timer").innerHTML = "12:00"; 
+    document.getElementById("timer").style.color = "#22d3ee";
+    document.getElementById("teamNameInput").value = "";
+    document.getElementById("headerTeamName").innerText = "AWAITING LINK...";
+    document.getElementById("centerTeamDisplay").innerText = "TEAM: -";
+    document.getElementById("message").innerHTML = "";
+    
+    updateUI();
+    updateHistory();
+    closeGmHub();
+    
+    document.getElementById("gameScreen").style.display = "none";
+    document.getElementById("endScreen").style.display = "none";
+    document.getElementById("failScreen").style.display = "none";
+    document.getElementById("startScreen").style.display = "block";
+    
+    startHappyBackgroundMusic();
+}
+
+/* FIREWORKS EFFECT */
+const canvas = document.getElementById('fwCanvas'); const ctx = canvas.getContext('2d'); let particles = []; let fwInterval;
+function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resizeCanvas);
+function createFirework() {
+    let x = Math.random() * canvas.width; let y = Math.random() * (canvas.height * 0.4) + canvas.height * 0.1;
+    let colors = ['#ff0055', '#00ffcc', '#ffcc00', '#00ff00', '#ff00ff', '#38bdf8']; let color = colors[Math.floor(Math.random() * colors.length)];
+    for (let i = 0; i < 40; i++) {
+        particles.push({
+            x: x, y: y, angle: Math.random() * Math.PI * 2, speed: Math.random() * 5 + 2,
+            friction: 0.95, gravity: 0.12, alpha: 1, decay: Math.random() * 0.015 + 0.015, color: color
+        });
+    }
+}
+function updateFireworks() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i]; p.speed *= p.friction; p.x += Math.cos(p.angle) * p.speed; p.y += Math.sin(p.angle) * p.speed + p.gravity; p.alpha -= p.decay;
+        if (p.alpha <= 0) { particles.splice(i, 1); continue; }
+        ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+    if (document.getElementById('endScreen').style.display === 'block') {
+        requestAnimationFrame(updateFireworks);
+    }
+}
+function startFireworks() {
+    resizeCanvas(); canvas.style.display = 'block'; updateFireworks();
+    fwInterval = setInterval(createFirework, 300); setTimeout(() => { clearInterval(fwInterval); }, 8000);
+}
+</script>
+
+</body>
+</html>
